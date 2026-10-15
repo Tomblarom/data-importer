@@ -50,7 +50,7 @@ final class BalanceTest extends TestCase
         $serialized   = json_encode($original->toArray(), JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR);
         $deserialized = Balance::fromArray(json_decode($serialized, true));
 
-        $this->assertSame($original, $deserialized);
+        $this->assertEquals($original, $deserialized);
     }
 
     public function testParseJsonFull(): void
@@ -65,9 +65,9 @@ final class BalanceTest extends TestCase
 
         $balance = Balance::fromJson(json_decode($json, true));
 
-        $this->assertSame($balance->getCurrent(), new Number('100000'));
-        $this->assertSame($balance->getAvailable(), new Number('100000'));
-        $this->assertSame($balance->getLimit(), new Number('10000'));
+        $this->assertEquals($balance->getCurrent(), new Number('100000'));
+        $this->assertEquals($balance->getAvailable(), new Number('100000'));
+        $this->assertEquals($balance->getLimit(), new Number('10000'));
         $this->assertFalse($balance->getOverdrawn());
         $this->assertSame($balance->getCurrency(), 'NZD');
     }
@@ -83,9 +83,9 @@ final class BalanceTest extends TestCase
 
         $balance = Balance::fromJson(json_decode($json, true));
 
-        $this->assertSame($balance->getCurrent(), new Number('100000'));
-        $this->assertSame($balance->getAvailable(), new Number('100000'));
-        $this->assertSame($balance->getLimit(), new Number('10000'));
+        $this->assertEquals($balance->getCurrent(), new Number('100000'));
+        $this->assertEquals($balance->getAvailable(), new Number('100000'));
+        $this->assertEquals($balance->getLimit(), new Number('10000'));
         $this->assertNull($balance->getOverdrawn());
         $this->assertSame($balance->getCurrency(), 'NZD');
     }
@@ -101,9 +101,9 @@ final class BalanceTest extends TestCase
 
         $balance = Balance::fromJson(json_decode($json, true));
 
-        $this->assertSame($balance->getCurrent(), new Number('-5500'));
-        $this->assertSame($balance->getAvailable(), new Number('4500'));
-        $this->assertSame($balance->getLimit(), new Number('10000'));
+        $this->assertEquals($balance->getCurrent(), new Number('-5500'));
+        $this->assertEquals($balance->getAvailable(), new Number('4500'));
+        $this->assertEquals($balance->getLimit(), new Number('10000'));
         $this->assertNull($balance->getOverdrawn());
         $this->assertSame($balance->getCurrency(), 'NZD');
     }

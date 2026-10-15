@@ -1,0 +1,99 @@
+name: 'BKB - container image'
+
+# No scheduled runs. Builds the BKB derivative image, smokes it, and pushes
+# to GHCR only on push to deploy/bkb. Pull requests only validate and smoke;
+# they never push packages.
+on:
+  push:
+    branches: [deploy/bkb]
+  pull_request:
+    paths:
+      - 'app/**'
+      - 'config/bkb.php'
+      - 'config/importer.php'
+      - 'routes/**'
+      - 'resources/views/v2/import/bkb/**'
+      - 'tests/Feature/Bkb/**'
+      - 'tests/Feature/Akahu/**'
+      - 'tests/Unit/Services/Akahu/**'
+      - 'tests/Unit/UploadReceiptStoreTest.php'
+      - 'composer.lock'
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'scripts/check_image.sh'
+      - 'docs/bkb-deployment.md'
+      - '.github/workflows/bkb-container.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/tomblarom/data-importer
+
+jobs:
+  php-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: bcmath, intl, mbstring, dom, xml, curl
+      - name: Install locked dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+      - name: Run BKB, receipt and Akahu tests
+        run: |
+          export APP_ENV=testing
+          export APP_KEY="base64:$(php -r 'echo base64_encode(random_bytes(32));')"
+          vendor/bin/phpunit tests/Feature/Bkb
+          vendor/bin/phpunit tests/Unit/UploadReceiptStoreTest.php
+          vendor/bin/phpunit tests/Feature/ImportReliability
+          vendor/bin/phpunit tests/Feature/Akahu
+          vendor/bin/phpunit tests/Unit/Services/Akahu
+        env:
+          # Fake credentials only; all bank/network calls in these suites
+          # are Http::fake()d, the Akahu suites make no network calls.
+          FIREFLY_III_URL: http://127.0.0.1:9
+          FIREFLY_III_ACCESS_TOKEN: dummy
+          BKB_BOT_URL: http://127.0.0.1:9
+          BKB_API_TOKEN: fake32chars0123456789abcdef01
+
+  build-smoke-push:
+    runs-on: ubuntu-latest
+    needs: php-validate
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Build local derivative image
+        run: |
+          docker build \
+            --build-arg "REVISION=${GITHUB_SHA}" \
+            -t "${IMAGE}:sha-${GITHUB_SHA}" \
+            -t "${IMAGE}:bkb" \
+            .
+      - name: Smoke-test image
+        run: ./scripts/check_image.sh "${IMAGE}:sha-${GITHUB_SHA}"
+      - name: Login to GHCR
+        if: github.event_name == 'push'
+        run: echo "${GITHUB_TOKEN}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push tags
+        if: github.event_name == 'push'
+        run: |
+          docker push "${IMAGE}:sha-${GITHUB_SHA}"
+          docker push "${IMAGE}:bkb"
+      - name: Expose digest summary
+        if: github.event_name == 'push'
+        run: |
+          DIGEST="$(docker inspect --format '{{ index .RepoDigests 0 }}' "${IMAGE}:sha-${GITHUB_SHA}" 2>/dev/null || true)"
+          {
+            echo "## BKB image pushed"
+            echo ""
+            echo "- Tags: \`${IMAGE}:sha-${GITHUB_SHA}\`, \`${IMAGE}:bkb\`"
+            echo "- Digest: \`${DIGEST:-unavailable}\`"
+          } >> "${GITHUB_STEP_SUMMARY}"

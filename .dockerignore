@@ -1,0 +1,16 @@
+# BKB derivative build-context guard. The Dockerfile COPYs only app/,
+# config/, routes/ and resources/views/, and must never bake secrets or
+# developer artifacts into the image.
+.env
+.git
+.gitignore
+vendor/
+node_modules/
+public/build/
+public/hot
+storage/*.key
+storage/logs/
+storage/framework/sessions/
+storage/framework/cache/data/
+.phpunit.cache/
+.phpunit.result.cache

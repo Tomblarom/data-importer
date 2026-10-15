@@ -25,55 +25,98 @@ declare(strict_types=1);
 namespace Tests;
 
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
-use PHPUnit\Runner\ErrorHandler;
-use Throwable;
 
 abstract class TestCase extends BaseTestCase
 {
     use CreatesApplication;
 
-    protected function tearDown(): void
-    {
-        parent::tearDown();
+    /** @var list<callable> */
+    private array $savedErrorHandlers = [];
 
-        // Workaround für Laravel/PHPUnit Handler-Tracking-Issue auf PHP 8.5:
-        // HandleExceptions::flushHandlersState() nutzt get_error_handler() und
-        // get_exception_handler() (PHP 8.5), die in manchen Builds fehlerhaft null
-        // zurückgeben. Ohne Cleanup wachsen die Handler-Stacks mit jedem Test,
-        // PHPUnit markiert alle Tests als risky → Failure bei failOnRisky=true.
-        // Siehe: https://github.com/laravel/framework/issues/49502
-        $this->ensureHandlerStackClean();
+    /** @var list<callable> */
+    private array $savedExceptionHandlers = [];
+
+    protected function setUp(): void
+    {
+        // Snapshot the complete pre-existing handler stacks (PHPUnit and
+        // anything before it) before Laravel registers its own handlers.
+        $this->savedErrorHandlers     = self::captureErrorHandlers();
+        $this->savedExceptionHandlers = self::captureExceptionHandlers();
+
+        parent::setUp();
     }
 
-    private function ensureHandlerStackClean(): void
+    protected function tearDown(): void
     {
-        // Alle Exception-Handler entfernen (nach tearDown sollten 0 übrig sein)
-        while (true) {
-            $previous = set_exception_handler(static fn (Throwable $e) => null);
-            restore_exception_handler();
-            if (null === $previous) {
-                break;
-            }
-            restore_exception_handler();
+        try {
+            parent::tearDown();
+        } finally {
+            // Laravel's HandleExceptions::flushHandlersState() clears all
+            // pre-existing handlers. Reinstall the exact saved stacks so
+            // PHPUnit's handlers survive; genuine test removals are still
+            // detected by PHPUnit itself during the test run.
+            self::reinstallErrorHandlers($this->savedErrorHandlers);
+            self::reinstallExceptionHandlers($this->savedExceptionHandlers);
+        }
+    }
+
+    /**
+     * @return list<callable>
+     */
+    private static function captureErrorHandlers(): array
+    {
+        $collected = [];
+        while (null !== ($top = get_error_handler())) {
+            restore_error_handler();
+            $collected[] = $top;
+        }
+        foreach (array_reverse($collected) as $handler) {
+            set_error_handler($handler);
         }
 
-        // Alle Error-Handler entfernen, PHPUnits ErrorHandler merken
-        $phpunitHandler = null;
-        while (true) {
-            $handler = set_error_handler(static fn () => false);
-            restore_error_handler();
-            if (null === $handler) {
-                break;
-            }
-            restore_error_handler();
-            if ($handler instanceof ErrorHandler) {
-                $phpunitHandler = $handler;
-            }
+        return $collected;
+    }
+
+    /**
+     * @return list<callable>
+     */
+    private static function captureExceptionHandlers(): array
+    {
+        $collected = [];
+        while (null !== ($top = get_exception_handler())) {
+            restore_exception_handler();
+            $collected[] = $top;
+        }
+        foreach (array_reverse($collected) as $handler) {
+            set_exception_handler($handler);
         }
 
-        // PHPUnits Error-Handler wieder installieren
-        if (null !== $phpunitHandler) {
-            set_error_handler($phpunitHandler);
+        return $collected;
+    }
+
+    /**
+     * @param list<callable> $handlers
+     */
+    private static function reinstallErrorHandlers(array $handlers): void
+    {
+        while (null !== get_error_handler()) {
+            restore_error_handler();
+        }
+        foreach (array_reverse($handlers) as $handler) {
+            set_error_handler($handler);
+        }
+    }
+
+    /**
+     * @param list<callable> $handlers
+     */
+    private static function reinstallExceptionHandlers(array $handlers): void
+    {
+        while (null !== get_exception_handler()) {
+            restore_exception_handler();
+        }
+        foreach (array_reverse($handlers) as $handler) {
+            set_exception_handler($handler);
         }
     }
 }

@@ -35,4 +35,14 @@ final class TrimStrings extends Middleware
      * The names of the attributes that should not be trimmed.
      */
     protected $except = ['password', 'password_confirmation'];
+
+    protected function transform($key, $value)
+    {
+        // Browser keyboard input must preserve credentials exactly, including whitespace.
+        if ('text' === $key && request()->is('bkb/browser/action')) {
+            return $value;
+        }
+
+        return parent::transform($key, $value);
+    }
 }

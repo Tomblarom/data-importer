@@ -656,6 +656,29 @@ trait AutoImports
         event(new ImportedTransactions(basename($jsonFile), $messages, $warnings, $errors, $this->conversionRateLimits));
     }
 
+    /** A machine-readable result without transaction descriptions, amounts or credentials. */
+    protected function uploadReport(): array
+    {
+        $conversion = $this->importJob->conversionStatus->toArray();
+        $submission = $this->importJob->submissionStatus->toArray();
+        $errors = array_merge($conversion['errors'], $submission['errors']);
+        $errorCount = 0;
+        $duplicates = 0;
+        array_walk_recursive($errors, static function (mixed $error) use (&$errorCount, &$duplicates): void {
+            if (str_starts_with((string) $error, '[a115]:')) {
+                ++$duplicates;
+            } else {
+                ++$errorCount;
+            }
+        });
+        $complete = ConversionStatus::CONVERSION_DONE === $conversion['status']
+            && SubmissionStatus::SUBMISSION_DONE === $submission['status'] && 0 === $errorCount;
+
+        return ['status' => $complete ? 'imported' : 'failed', 'job_id' => $this->importJob->identifier,
+            'converted_count' => count($this->importJob->getConvertedTransactions()),
+            'duplicate_count' => $duplicates, 'error_count' => $errorCount];
+    }
+
     protected function isNothingDownloaded(): bool
     {
         foreach ($this->importJob->conversionStatus->errors as $errors) {

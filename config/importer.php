@@ -63,6 +63,10 @@ declare(strict_types=1);
  *
  */
 
+$autoImportSecretFile = (string) env('AUTO_IMPORT_SECRET_FILE', '');
+$autoImportSecret = '' === $autoImportSecretFile ? env('AUTO_IMPORT_SECRET', '')
+    : (is_readable($autoImportSecretFile) ? trim((string) file_get_contents($autoImportSecretFile)) : '');
+
 return [
     'version'                       => '2.3.5',
     'build_time'                    => 1790141955,
@@ -147,6 +151,13 @@ return [
             'explanation'               => '',
             'supports_new_accounts'     => true,
         ],
+        'bkb'       => [
+            'title'                     => 'BKB Digital Banking',
+            'enabled'                   => true,
+            'conversion_before_mapping' => false,
+            'explanation'               => '',
+            'supports_new_accounts'     => false,
+        ],
     ],
 
     // docker build info.
@@ -158,7 +169,7 @@ return [
     'fallback_in_dir'               => env('FALLBACK_IN_DIR', false),
     'fallback_configuration'        => '_fallback.json',
     'import_dir_allowlist'          => explode(',', (string)env('IMPORT_DIR_ALLOWLIST', '')),
-    'auto_import_secret'            => env('AUTO_IMPORT_SECRET', ''),
+    'auto_import_secret'            => $autoImportSecret,
     'can_post_autoimport'           => env('CAN_POST_AUTOIMPORT', false),
     'can_post_files'                => env('CAN_POST_FILES', false),
     'access_token'                  => env('FIREFLY_III_ACCESS_TOKEN'),
