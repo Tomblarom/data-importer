@@ -36,6 +36,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 use JsonException;
 use Throwable;
@@ -120,6 +121,9 @@ final class BkbController extends Controller
                 'intervalSeconds' => is_array($config) ? (int) ($config['interval_seconds'] ?? 3600) : 3600,
                 'paused'          => is_array($config) ? (bool) ($config['paused'] ?? true) : true,
                 'importConfig'    => null === $importConfig ? '' : (string) json_encode($importConfig, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
+                'keepalive'       => is_array($status) && isset($status['keepalive']) && is_array($status['keepalive']) ? $status['keepalive'] : [],
+                'pendingImport'   => is_array($status) ? (bool) ($status['pending_import'] ?? false) : false,
+                'rangeVerified'   => is_array($status) ? (bool) ($status['last_export_range_verified'] ?? false) : false,
                 'viewportWidth'   => (int) config('bkb.viewport.width', 1440),
                 'viewportHeight'  => (int) config('bkb.viewport.height', 1000),
             ]
@@ -212,18 +216,27 @@ final class BkbController extends Controller
      */
     public function action(Request $request): JsonResponse
     {
-        $width  = (int) config('bkb.viewport.width', 1440);
-        $height = (int) config('bkb.viewport.height', 1000);
-        $validated = $request->validate(
+        // The bot viewport is 0-indexed: the extreme pixel is size - 1.
+        $maxX = (int) config('bkb.viewport.width', 1440) - 1;
+        $maxY = (int) config('bkb.viewport.height', 1000) - 1;
+
+        // Validated manually (never via $request->validate()) so typed bank
+        // text is never flashed into the session on validation errors.
+        $validator = Validator::make(
+            $request->all(),
             [
                 'type'    => 'required|in:click,text,key,scroll',
-                'x'       => sprintf('required_if:type,click|numeric|min:0|max:%d', $width),
-                'y'       => sprintf('required_if:type,click|numeric|min:0|max:%d', $height),
+                'x'       => sprintf('required_if:type,click|numeric|min:0|max:%d', $maxX),
+                'y'       => sprintf('required_if:type,click|numeric|min:0|max:%d', $maxY),
                 'text'    => 'required_if:type,text|string|max:500',
                 'key'     => 'required_if:type,key|in:Enter,Tab,Backspace',
                 'delta_y' => 'required_if:type,scroll|numeric|min:-2000|max:2000',
             ]
         );
+        if ($validator->fails()) {
+            return response()->json(['ok' => false, 'message' => 'Invalid browser action.'], 422);
+        }
+        $validated = $validator->validated();
 
         $action = match ($validated['type']) {
             'click'  => ['type' => 'click', 'x' => (int) $validated['x'], 'y' => (int) $validated['y']],
@@ -249,7 +262,7 @@ final class BkbController extends Controller
                 'account_url'      => 'nullable|url|starts_with:https://',
                 'start_date'       => 'nullable|date',
                 'end_date'         => 'nullable|date',
-                'interval_seconds' => 'nullable|integer|min:60|max:86400',
+                'interval_seconds' => 'nullable|integer|min:3600|max:604800',
                 'paused'           => 'nullable|boolean',
                 'import_config'    => [
                     'nullable',
@@ -344,7 +357,9 @@ final class BkbController extends Controller
         $importJob = $this->repository->setImportableFileString($importJob, $csv);
         $importJob = $this->repository->markAs($importJob, 'contains_content');
 
-        $configuration = Configuration::make();
+        // The normalized bot CSV uses semicolons and a header row.
+        $configuration = Configuration::fromArray(['delimiter' => ';']);
+        $configuration->setHeaders(true);
         if ('' !== $configContent) {
             try {
                 $decoded = json_decode($configContent, true);
@@ -352,8 +367,9 @@ final class BkbController extends Controller
                     $configuration = Configuration::fromArray($decoded);
                 }
             } catch (Throwable) {
-                // Fall back to a blank configuration; mapping starts fresh.
-                $configuration = Configuration::make();
+                // Fall back to the preset configuration; mapping starts fresh.
+                $configuration = Configuration::fromArray(['delimiter' => ';']);
+                $configuration->setHeaders(true);
             }
         }
         $configuration->setFlow($importJob->getFlow());
