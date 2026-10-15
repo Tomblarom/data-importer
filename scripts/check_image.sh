@@ -135,7 +135,7 @@ case "$flat" in
     *) die "public /api/import-flows misses key bkb: $flows" ;;
 esac
 case "$flat" in
-    *'"title":"BKB Digital Banking"'*) pass "public /api/import-flows includes BKB title" ;;
+    *'"title":"BKBDigitalBanking"'*) pass "public /api/import-flows includes BKB title" ;;
     *) die "public /api/import-flows misses BKB title: $flows" ;;
 esac
 

@@ -51,6 +51,7 @@ jobs:
           export APP_KEY="base64:$(php -r 'echo base64_encode(random_bytes(32));')"
           vendor/bin/phpunit tests/Feature/Bkb
           vendor/bin/phpunit tests/Unit/UploadReceiptStoreTest.php
+          vendor/bin/phpunit tests/Feature/ImportReliability
           vendor/bin/phpunit tests/Feature/Akahu
           vendor/bin/phpunit tests/Unit/Services/Akahu
         env:

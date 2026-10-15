@@ -24,7 +24,14 @@ final class PrivateUploadLogs
         config(['logging.channels.private-upload' => ['driver' => 'monolog', 'handler' => NullHandler::class],
             'logging.default' => 'private-upload']);
         try {
-            return $next($request);
+            $response = $next($request);
+            if ($response->getStatusCode() >= 500 || ($response->getStatusCode() >= 400
+                && !str_contains((string) $response->headers->get('Content-Type'), 'application/json'))) {
+                return response()->json(['status' => 'failed', 'error_code' => 'upload_failed'], 500)
+                    ->header('Cache-Control', 'no-store');
+            }
+
+            return $response;
         } catch (Throwable) {
             // The durable receipt remains pending when execution did not finish cleanly.
             return response()->json(['status' => 'failed', 'error_code' => 'upload_failed'], 500)
