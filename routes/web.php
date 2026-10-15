@@ -26,6 +26,31 @@ declare(strict_types=1);
 Route::post('/autoimport', 'AutoImportController@index')->name('autoimport');
 Route::post('/autoupload', 'AutoUploadController@index')->name('autoupload');
 
+// BKB Digital Banking: specialized before the generic flow routes. Both
+// entry points open BKB management, which is gated by its own admin login.
+Route::get('/authenticate-flow/bkb', 'Import\BkbController@authenticate')->name('bkb.authenticate');
+Route::get('/new-import/bkb', 'Import\BkbController@newImport')->name('bkb.new-import');
+Route::post('/new-import/bkb', 'Import\BkbController@newImportPost')->name('bkb.new-import.post');
+
+Route::get('/bkb/login', 'Import\BkbController@showLogin')->name('bkb.login');
+Route::post('/bkb/login', 'Import\BkbController@login')->name('bkb.login.post')->middleware('throttle:10,1');
+
+Route::group(
+    ['prefix' => 'bkb', 'as' => 'bkb.', 'middleware' => ['bkb.admin']],
+    static function (): void {
+        Route::get('/', 'Import\BkbController@index')->name('index');
+        Route::post('/logout', 'Import\BkbController@logout')->name('logout');
+        Route::get('/frame', 'Import\BkbController@frame')->name('frame');
+        Route::post('/browser/open', 'Import\BkbController@open')->name('browser.open');
+        Route::post('/browser/action', 'Import\BkbController@action')->name('browser.action');
+        Route::post('/config', 'Import\BkbController@saveConfig')->name('config.save');
+        Route::post('/sample', 'Import\BkbController@sample')->name('sample');
+        Route::post('/sync', 'Import\BkbController@syncNow')->name('sync');
+        Route::post('/pause', 'Import\BkbController@pause')->name('pause');
+        Route::post('/resume', 'Import\BkbController@resume')->name('resume');
+    }
+);
+
 // new routes that use less session data and redirects.
 Route::get('/authenticate-flow/{flow?}', 'Import\AuthenticateController@index')->name('authenticate-flow.index');
 Route::post('/authenticate-flow/{flow}', 'Import\AuthenticateController@postIndex')->name('authenticate-flow.post');
