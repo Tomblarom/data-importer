@@ -46,9 +46,9 @@ final class ConversionTest extends TestCase
 
         $conversion = Conversion::fromJson(json_decode($json, true));
 
-        $this->assertSame($conversion->getAmount(), new Number('0.13'));
+        $this->assertEquals($conversion->getAmount(), new Number('0.13'));
         $this->assertSame($conversion->getCurrency(), 'AUD');
-        $this->assertSame($conversion->getRate(), new Number('0.12'));
-        $this->assertSame($conversion->getFee(), new Number('0.11'));
+        $this->assertEquals($conversion->getRate(), new Number('0.12'));
+        $this->assertEquals($conversion->getFee(), new Number('0.11'));
     }
 }

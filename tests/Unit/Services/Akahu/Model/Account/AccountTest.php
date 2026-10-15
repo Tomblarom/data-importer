@@ -81,7 +81,7 @@ final class AccountTest extends TestCase
         $serialized   = json_encode($original->toArray(), JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR);
         $deserialized = Account::fromArray(json_decode($serialized, true));
 
-        $this->assertSame($original, $deserialized);
+        $this->assertEquals($original, $deserialized);
     }
 
     public function testParseJsonFull(): void
@@ -138,10 +138,10 @@ final class AccountTest extends TestCase
         $this->assertSame($account->getFormattedAccount(), '99-9999-0000000-00');
         $this->assertSame($account->getMeta(), []);
 
-        $this->assertSame($account->getRefreshed()?->getBalance(), Carbon::parse('2026-08-05T03:22:25.542Z'));
-        $this->assertSame($account->getRefreshed()?->getMeta(), Carbon::parse('2026-08-04T03:22:25.542Z'));
-        $this->assertSame($account->getRefreshed()?->getTransactions(), Carbon::parse('2026-08-03T03:22:29.023Z'));
-        $this->assertSame($account->getRefreshed()?->getParty(), Carbon::parse('2026-08-02T10:22:29.023Z'));
+        $this->assertEquals($account->getRefreshed()?->getBalance(), Carbon::parse('2026-08-05T03:22:25.542Z'));
+        $this->assertEquals($account->getRefreshed()?->getMeta(), Carbon::parse('2026-08-04T03:22:25.542Z'));
+        $this->assertEquals($account->getRefreshed()?->getTransactions(), Carbon::parse('2026-08-03T03:22:29.023Z'));
+        $this->assertEquals($account->getRefreshed()?->getParty(), Carbon::parse('2026-08-02T10:22:29.023Z'));
 
         $this->assertSame($account->getType(), 'CHECKING');
         $this->assertSame($account->getAttributes(), [Account::ATTRIBUTE_PAYMENT_TO, Account::ATTRIBUTE_PAYMENT_FROM, Account::ATTRIBUTE_TRANSACTIONS]);
@@ -192,8 +192,8 @@ final class AccountTest extends TestCase
         $this->assertSame($account->getFormattedAccount(), '99-9999-0000000-00');
         $this->assertNull($account->getMeta());
 
-        $this->assertSame($account->getRefreshed()?->getBalance(), Carbon::parse('2026-08-05T10:15:45.863Z'));
-        $this->assertSame($account->getRefreshed()?->getMeta(), Carbon::parse('2026-08-05T10:15:45.863Z'));
+        $this->assertEquals($account->getRefreshed()?->getBalance(), Carbon::parse('2026-08-05T10:15:45.863Z'));
+        $this->assertEquals($account->getRefreshed()?->getMeta(), Carbon::parse('2026-08-05T10:15:45.863Z'));
         $this->assertNull($account->getRefreshed()?->getTransactions());
         $this->assertNull($account->getRefreshed()?->getParty());
 
@@ -246,9 +246,9 @@ final class AccountTest extends TestCase
         $this->assertSame($account->getFormattedAccount(), '11-0000-1111111-00');
         $this->assertNull($account->getMeta());
 
-        $this->assertSame($account->getRefreshed()?->getBalance(), Carbon::parse('2026-08-05T03:22:25.542Z'));
-        $this->assertSame($account->getRefreshed()?->getMeta(), Carbon::parse('2026-08-05T03:22:25.542Z'));
-        $this->assertSame($account->getRefreshed()?->getTransactions(), Carbon::parse('2026-08-05T03:22:29.023Z'));
+        $this->assertEquals($account->getRefreshed()?->getBalance(), Carbon::parse('2026-08-05T03:22:25.542Z'));
+        $this->assertEquals($account->getRefreshed()?->getMeta(), Carbon::parse('2026-08-05T03:22:25.542Z'));
+        $this->assertEquals($account->getRefreshed()?->getTransactions(), Carbon::parse('2026-08-05T03:22:29.023Z'));
         $this->assertNull($account->getRefreshed()?->getParty());
 
         $this->assertSame($account->getType(), 'CHECKING');

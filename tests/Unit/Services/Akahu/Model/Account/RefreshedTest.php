@@ -49,7 +49,7 @@ final class RefreshedTest extends TestCase
         $serialized   = json_encode($original->toArray(), JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR);
         $deserialized = Refreshed::fromArray(json_decode($serialized, true));
 
-        $this->assertSame($original, $deserialized);
+        $this->assertEquals($original, $deserialized);
     }
 
     public function testParseJsonFull(): void
@@ -63,9 +63,9 @@ final class RefreshedTest extends TestCase
 
         $refreshed = Refreshed::fromJson(json_decode($json, true));
 
-        $this->assertSame($refreshed->getBalance(), Carbon::parse('2026-08-05T03:22:25.542Z'));
-        $this->assertSame($refreshed->getMeta(), Carbon::parse('2026-08-04T03:22:25.542Z'));
-        $this->assertSame($refreshed->getTransactions(), Carbon::parse('2026-08-03T03:22:29.023Z'));
-        $this->assertSame($refreshed->getParty(), Carbon::parse('2026-08-02T10:22:29.023Z'));
+        $this->assertEquals($refreshed->getBalance(), Carbon::parse('2026-08-05T03:22:25.542Z'));
+        $this->assertEquals($refreshed->getMeta(), Carbon::parse('2026-08-04T03:22:25.542Z'));
+        $this->assertEquals($refreshed->getTransactions(), Carbon::parse('2026-08-03T03:22:29.023Z'));
+        $this->assertEquals($refreshed->getParty(), Carbon::parse('2026-08-02T10:22:29.023Z'));
     }
 }

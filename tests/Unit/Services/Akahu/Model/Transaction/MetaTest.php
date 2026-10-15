@@ -60,9 +60,9 @@ final class MetaTest extends TestCase
         $this->assertSame($meta->getCode(), 'my code');
         $this->assertSame($meta->getReference(), 'my ref');
         $this->assertSame($meta->getOtherAccount(), '00-0000-0000000-00');
-        $this->assertSame($meta->getConversion()?->getAmount(), new Number('2.15'));
+        $this->assertEquals($meta->getConversion()?->getAmount(), new Number('2.15'));
         $this->assertSame($meta->getConversion()?->getCurrency(), 'GBP');
-        $this->assertSame($meta->getConversion()?->getRate(), new Number('0.49'));
+        $this->assertEquals($meta->getConversion()?->getRate(), new Number('0.49'));
         $this->assertSame($meta->getCardSuffix(), '1234');
         $this->assertSame($meta->getLogo(), 'https://cdn.akahu.nz/logos/merchants/merchant_aaaaaaaaaaaaaaaaaaaaaaaaa');
     }
@@ -107,10 +107,10 @@ final class MetaTest extends TestCase
         $this->assertNull($meta->getCode());
         $this->assertNull($meta->getReference());
         $this->assertNull($meta->getOtherAccount());
-        $this->assertSame($meta->getConversion()?->getAmount(), new Number('12.34'));
+        $this->assertEquals($meta->getConversion()?->getAmount(), new Number('12.34'));
         $this->assertSame($meta->getConversion()?->getCurrency(), 'AUD');
-        $this->assertSame($meta->getConversion()?->getRate(), new Number('0.44'));
-        $this->assertSame($meta->getConversion()?->getFee(), new Number('0.22'));
+        $this->assertEquals($meta->getConversion()?->getRate(), new Number('0.44'));
+        $this->assertEquals($meta->getConversion()?->getFee(), new Number('0.22'));
         $this->assertSame($meta->getCardSuffix(), '1234');
         $this->assertSame($meta->getLogo(), 'https://cdn.akahu.nz/logos/merchants/merchant_aaaaaaaaaaaaaaaaaaaaaaaaa');
     }
@@ -133,10 +133,10 @@ final class MetaTest extends TestCase
         $this->assertNull($meta->getCode());
         $this->assertNull($meta->getReference());
         $this->assertNull($meta->getOtherAccount());
-        $this->assertSame($meta->getConversion()?->getAmount(), new Number('1.11'));
+        $this->assertEquals($meta->getConversion()?->getAmount(), new Number('1.11'));
         $this->assertSame($meta->getConversion()?->getCurrency(), 'NZD');
-        $this->assertSame($meta->getConversion()?->getRate(), new Number('0.99'));
-        $this->assertSame($meta->getConversion()?->getFee(), new Number('0.11'));
+        $this->assertEquals($meta->getConversion()?->getRate(), new Number('0.99'));
+        $this->assertEquals($meta->getConversion()?->getFee(), new Number('0.11'));
         $this->assertSame($meta->getCardSuffix(), '1234');
         $this->assertNull($meta->getLogo());
     }
