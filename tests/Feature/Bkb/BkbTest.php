@@ -211,6 +211,38 @@ final class BkbTest extends TestCase
         );
     }
 
+    public function testBrowserTextPreservesSurroundingSpaces(): void
+    {
+        Http::fake(['http://bkb-bot:8080/v1/browser/action' => Http::response(['ok' => true], 200)]);
+
+        $this->withSession([BkbAdmin::SESSION_KEY => true])->postJson(
+            '/bkb/browser/action',
+            ['_token' => csrf_token(), 'type' => 'text', 'text' => '  fixture input  ']
+        )->assertOk()->assertJson(['ok' => true]);
+
+        Http::assertSent(
+            static fn ($request): bool => str_ends_with($request->url(), '/v1/browser/action')
+                && '  fixture input  ' === ($request->data()['text'] ?? null)
+        );
+    }
+
+    public function testSyncSendsEmptyObjectWithoutOverrides(): void
+    {
+        Http::fake(['http://bkb-bot:8080/v1/sync' => Http::response(['accepted' => true], 202)]);
+
+        $this->get('/bkb/login')->assertOk();
+        $this->withSession([BkbAdmin::SESSION_KEY => true])
+            ->post('/bkb/sync', ['_token' => csrf_token()])
+            ->assertRedirect(route('bkb.index'))
+            ->assertSessionHasNoErrors();
+
+        // No date overrides: the outgoing body must carry an empty object.
+        Http::assertSent(
+            static fn ($request): bool => str_ends_with($request->url(), '/v1/sync')
+                && [] === $request->data()
+        );
+    }
+
     public function testFrameProxiesPngWithoutCaching(): void
     {
         $png = base64_decode(
