@@ -91,7 +91,7 @@ final class BkbClient
      */
     public function openBrowser(): bool
     {
-        $response = $this->send('post', '/v1/browser/open', [], 30);
+        $response = $this->send('post', '/v1/browser/open', [], 60);
 
         return null !== $response && $response->ok();
     }
@@ -176,7 +176,7 @@ final class BkbClient
 
             return 'get' === $method
                 ? $request->get($this->baseUrl().$path)
-                : $request->post($this->baseUrl().$path, $payload);
+                : $request->send('POST', $this->baseUrl().$path, ['json' => [] === $payload ? new \stdClass() : $payload]);
         } catch (ConnectionException) {
             // Deliberately terse: no URLs, tokens or response bodies in logs.
             Log::warning(sprintf('BKB browser service request failed (%s %s).', strtoupper($method), $path));
