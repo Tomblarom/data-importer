@@ -35,6 +35,18 @@ use Tests\TestCase;
  */
 final class HttpFlowTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // Views are asserted as rendered HTML; compiled frontend assets are
+        // smoke-tested separately against real builds, never here.
+        $this->withoutVite();
+        // The Akahu validator only checks token presence, so self-contained
+        // fake tokens keep these tests free of network and credentials.
+        config()->set('akahu.app_id_token', 'fake-test-app-token');
+        config()->set('akahu.user_access_token', 'fake-test-user-token');
+    }
+
     public function testValidate(): void
     {
         $this->get('/api/import-flows/validate/akahu')->assertOk()->assertJson(['result' => 'OK']);
