@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace App\Http;
 
 use App\Http\Middleware\Authenticate;
+use App\Http\Middleware\BkbAdmin;
 use App\Http\Middleware\CheckForMaintenanceMode;
 use App\Http\Middleware\EncryptCookies;
 use App\Http\Middleware\RedirectIfAuthenticated;
@@ -104,6 +105,7 @@ final class Kernel extends HttpKernel
         'password.confirm' => RequirePassword::class,
         'signed'           => ValidateSignature::class,
         'throttle'         => ThrottleRequests::class,
+        'bkb.admin'        => BkbAdmin::class,
         'verified'         => EnsureEmailIsVerified::class,
     ];
 }

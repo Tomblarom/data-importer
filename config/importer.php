@@ -147,6 +147,13 @@ return [
             'explanation'               => '',
             'supports_new_accounts'     => true,
         ],
+        'bkb'       => [
+            'title'                     => 'BKB Digital Banking',
+            'enabled'                   => true,
+            'conversion_before_mapping' => false,
+            'explanation'               => '',
+            'supports_new_accounts'     => false,
+        ],
     ],
 
     // docker build info.

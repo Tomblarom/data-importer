@@ -26,6 +26,7 @@ namespace App\Api\Controllers\ImportFlow;
 
 use App\Api\Controllers\Controller;
 use App\Services\Akahu\AuthenticationValidator as AkahuValidator;
+use App\Services\Bkb\AuthenticationValidator as BkbValidator;
 use App\Services\EnableBanking\AuthenticationValidator as EnableBankingValidator;
 use App\Services\Enums\AuthenticationStatus;
 use App\Services\LunchFlow\AuthenticationValidator as LunchFlowValidator;
@@ -46,6 +47,7 @@ final class ValidationController extends Controller
             'sophtron'               => $this->validateSophtron(),
             'eb'                     => $this->validateEnableBanking(),
             'akahu'                  => $this->validateAkahu(),
+            'bkb'                    => $this->validateBkb(),
             'file'                   => response()->json(['result' => 'OK']),
             default                  => response()->json(['result' => 'NOK', 'message' => 'Unknown provider'])
         };
@@ -170,6 +172,24 @@ final class ValidationController extends Controller
         }
 
         Log::info(sprintf('[%s] All OK in %s.', config('importer.version'), __METHOD__));
+
+        return response()->json(['result' => 'OK']);
+    }
+
+    private function validateBkb(): JsonResponse
+    {
+        Log::debug(sprintf('[%s] Now in %s', config('importer.version'), __METHOD__));
+        $validator = new BkbValidator();
+        $result    = $validator->validate();
+
+        if (AuthenticationStatus::ERROR === $result) {
+            Log::warning('BKB browser service is unreachable.');
+
+            return response()->json(['result' => 'NOK']);
+        }
+        if (AuthenticationStatus::NODATA === $result) {
+            return response()->json(['result' => 'NODATA']);
+        }
 
         return response()->json(['result' => 'OK']);
     }
