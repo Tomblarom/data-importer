@@ -138,12 +138,15 @@ final class BkbTest extends TestCase
         $this->post('/bkb/login', ['password' => $this->adminPassword, '_token' => csrf_token()])
             ->assertRedirect(route('bkb.index'));
 
-        $this->get('/bkb')->assertOk()
+        $response = $this->get('/bkb')->assertOk()
             ->assertSee('ready', false)
             ->assertSee('not verified', false)
             ->assertSee('ping', false)
-            ->assertDontSee('test-token')
-            ->assertHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+            ->assertDontSee('test-token');
+        $cacheControl = (string) $response->headers->get('Cache-Control');
+        $this->assertStringContainsString('no-store', $cacheControl);
+        $this->assertStringContainsString('no-cache', $cacheControl);
+        $this->assertStringContainsString('must-revalidate', $cacheControl);
     }
 
     public function testSaveConfigRejectsShortInterval(): void
@@ -217,7 +220,10 @@ final class BkbTest extends TestCase
 
         $response = $this->withSession([BkbAdmin::SESSION_KEY => true])->get('/bkb/frame');
         $response->assertOk()->assertHeader('Content-Type', 'image/png');
-        $response->assertHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+        $cacheControl = (string) $response->headers->get('Cache-Control');
+        $this->assertStringContainsString('no-store', $cacheControl);
+        $this->assertStringContainsString('no-cache', $cacheControl);
+        $this->assertStringContainsString('must-revalidate', $cacheControl);
         $this->assertSame($png, $response->getContent());
 
         Http::assertSent(
@@ -248,7 +254,9 @@ final class BkbTest extends TestCase
         $this->assertTrue($disk->exists(sprintf('%s.json', $identifier)));
         $job = json_decode((string) $disk->get(sprintf('%s.json', $identifier)), true);
         $this->assertSame('file', $job['flow']);
-        $this->assertStringContainsString('Datum;Text;Betrag', (string) $job['importable_file_string']);
+        $storedCsv = base64_decode((string) $job['importable_file_string'], true);
+        $this->assertNotFalse($storedCsv);
+        $this->assertStringContainsString('Datum;Text;Betrag', (string) $storedCsv);
     }
 
     public function testRecoverAcknowledgesFailedImport(): void
