@@ -25,6 +25,7 @@ declare(strict_types=1);
 // import by POST
 Route::post('/autoimport', 'AutoImportController@index')->name('autoimport');
 Route::post('/autoupload', 'AutoUploadController@index')->name('autoupload');
+require __DIR__.'/receipts.php';
 
 // new routes that use less session data and redirects.
 Route::get('/authenticate-flow/{flow?}', 'Import\AuthenticateController@index')->name('authenticate-flow.index');

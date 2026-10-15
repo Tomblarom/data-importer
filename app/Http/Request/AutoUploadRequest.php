@@ -36,6 +36,7 @@ final class AutoUploadRequest extends Request
 
     public function rules(): array
     {
-        return ['importable' => 'file', 'json' => ['required', 'file']];
+        return ['importable' => 'file', 'json' => ['required', 'file'],
+            'import_id' => ['nullable', 'string', 'regex:/\A[a-zA-Z0-9_-]{16,64}\z/']];
     }
 }
