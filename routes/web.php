@@ -46,6 +46,7 @@ Route::group(
         Route::post('/config', 'Import\BkbController@saveConfig')->name('config.save');
         Route::post('/sample', 'Import\BkbController@sample')->name('sample');
         Route::post('/sync', 'Import\BkbController@syncNow')->name('sync');
+        Route::post('/recover', 'Import\BkbController@recover')->name('recover');
         Route::post('/pause', 'Import\BkbController@pause')->name('pause');
         Route::post('/resume', 'Import\BkbController@resume')->name('resume');
     }

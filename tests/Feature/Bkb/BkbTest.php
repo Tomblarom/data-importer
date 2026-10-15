@@ -41,6 +41,9 @@ final class BkbTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // Views are asserted as rendered HTML; compiled frontend assets are
+        // smoke-tested separately against real builds, never here.
+        $this->withoutVite();
         config()->set('bkb.bot_url', 'http://bkb-bot:8080');
         config()->set('bkb.api_token', 'test-token');
         config()->set('bkb.admin_hash', password_hash($this->adminPassword, PASSWORD_BCRYPT, ['cost' => 4]));
@@ -246,6 +249,70 @@ final class BkbTest extends TestCase
         $job = json_decode((string) $disk->get(sprintf('%s.json', $identifier)), true);
         $this->assertSame('file', $job['flow']);
         $this->assertStringContainsString('Datum;Text;Betrag', (string) $job['importable_file_string']);
+    }
+
+    public function testRecoverAcknowledgesFailedImport(): void
+    {
+        Http::fake(
+            [
+                'http://bkb-bot:8080/v1/status'  => Http::response($this->pendingStatusPayload(), 200),
+                'http://bkb-bot:8080/v1/config'  => Http::response($this->configPayload(), 200),
+                'http://bkb-bot:8080/v1/recover' => Http::response(['ok' => true], 200),
+            ]
+        );
+
+        // the button is offered only while an import is pending.
+        $this->withSession([BkbAdmin::SESSION_KEY => true])->get('/bkb')->assertOk()
+            ->assertSee('Acknowledge failed import', false);
+
+        $this->get('/bkb/login')->assertOk();
+        $this->withSession([BkbAdmin::SESSION_KEY => true])
+            ->post('/bkb/recover', ['_token' => csrf_token()])
+            ->assertRedirect(route('bkb.index'))
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('status');
+
+        Http::assertSent(
+            static fn ($request): bool => str_ends_with($request->url(), '/v1/recover')
+                && 'Bearer test-token' === $request->header('Authorization')[0]
+                && [] === $request->data()
+        );
+    }
+
+    public function testRecoverStaysBlockedWhileProcessing(): void
+    {
+        Http::fake(['http://bkb-bot:8080/v1/recover' => Http::response(['detail' => 'still processing'], 409)]);
+
+        $this->get('/bkb/login')->assertOk();
+        $this->withSession([BkbAdmin::SESSION_KEY => true])
+            ->post('/bkb/recover', ['_token' => csrf_token()])
+            ->assertRedirect(route('bkb.index'))
+            ->assertSessionHasErrors('recover');
+    }
+
+    public function testRecoverButtonHiddenWithoutPendingImport(): void
+    {
+        Http::fake(
+            [
+                'http://bkb-bot:8080/v1/status' => Http::response($this->statusPayload(), 200),
+                'http://bkb-bot:8080/v1/config' => Http::response($this->configPayload(), 200),
+            ]
+        );
+
+        $this->withSession([BkbAdmin::SESSION_KEY => true])->get('/bkb')->assertOk()
+            ->assertDontSee('Acknowledge failed import', false);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function pendingStatusPayload(): array
+    {
+        $payload                   = $this->statusPayload();
+        $payload['state']          = 'error';
+        $payload['pending_import'] = true;
+
+        return $payload;
     }
 
     /**
