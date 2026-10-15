@@ -24,7 +24,8 @@ declare(strict_types=1);
 
 // import by POST
 Route::post('/autoimport', 'AutoImportController@index')->name('autoimport');
-Route::post('/autoupload', 'AutoUploadController@index')->name('autoupload');
+Route::post('/autoupload', 'AutoUploadController@index')->name('autoupload')
+    ->middleware(\App\Http\Middleware\PrivateUploadLogs::class);
 require __DIR__.'/receipts.php';
 
 // BKB Digital Banking: specialized before the generic flow routes. Both

@@ -665,7 +665,7 @@ trait AutoImports
         $errorCount = 0;
         $duplicates = 0;
         array_walk_recursive($errors, static function (mixed $error) use (&$errorCount, &$duplicates): void {
-            if (str_contains((string) $error, '[a115]')) {
+            if (str_starts_with((string) $error, '[a115]:')) {
                 ++$duplicates;
             } else {
                 ++$errorCount;

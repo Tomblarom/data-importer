@@ -267,10 +267,8 @@ final class ApiSubmitter
         try {
             /** @var GetTransactionsResponse $response */
             $response = $request->get();
-        } catch (ApiHttpException $e) {
-            Log::error(sprintf('[%s]: %s', config('importer.version'), $e->getMessage()));
-
-            return null;
+        } catch (ApiHttpException) {
+            throw new ImporterErrorException('Could not complete the duplicate transaction search.');
         }
         if (0 === $response->count()) {
             return null;
@@ -328,10 +326,8 @@ final class ApiSubmitter
         try {
             /** @var GetCountTransactionsResponse $response */
             $response = $request->get();
-        } catch (ApiHttpException $e) {
-            Log::error(sprintf('[%s]: %s', config('importer.version'), $e->getMessage()));
-
-            return true;
+        } catch (ApiHttpException) {
+            throw new ImporterErrorException('Could not complete the duplicate transaction count.');
         }
         Log::debug(sprintf('The search returned count: %d', $response->getCount()));
         if (0 === $response->getCount()) {
