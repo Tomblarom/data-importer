@@ -25,6 +25,7 @@ declare(strict_types=1);
 // import by POST
 Route::post('/autoimport', 'AutoImportController@index')->name('autoimport');
 Route::post('/autoupload', 'AutoUploadController@index')->name('autoupload');
+require __DIR__.'/receipts.php';
 
 // BKB Digital Banking: specialized before the generic flow routes. Both
 // entry points open BKB management, which is gated by its own admin login.
