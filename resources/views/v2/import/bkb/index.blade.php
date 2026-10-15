@@ -57,6 +57,17 @@
                             <dd class="col-sm-8">{{ $nextRun ?? 'unknown' }}</dd>
                             <dt class="col-sm-4">Configuration</dt>
                             <dd class="col-sm-8">{{ $configReady ? 'complete' : 'incomplete' }}</dd>
+                            <dt class="col-sm-4">Pending import</dt>
+                            <dd class="col-sm-8">{{ $pendingImport ? 'yes' : 'no' }}</dd>
+                            <dt class="col-sm-4">Export range verified</dt>
+                            <dd class="col-sm-8">{{ $rangeVerified ? 'yes' : 'not verified' }}</dd>
+                            <dt class="col-sm-4">Browser keepalive</dt>
+                            <dd class="col-sm-8">{{ $keepalive['strategy'] ?? 'unknown' }}, last
+                                verified {{ $keepalive['last_verified'] ?? 'never' }}</dd>
+                            @if(!empty($keepalive['observations']))
+                                <dt class="col-sm-4">Keepalive notes</dt>
+                                <dd class="col-sm-8">{{ is_array($keepalive['observations']) ? implode('; ', $keepalive['observations']) : $keepalive['observations'] }}</dd>
+                            @endif
                             @if(null !== $lastError && '' !== trim((string) $lastError))
                                 <dt class="col-sm-4">Last error</dt>
                                 <dd class="col-sm-8">{{ $lastError }}</dd>
@@ -150,7 +161,7 @@
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label" for="bkb-interval">Interval (seconds)</label>
                                     <input type="number" class="form-control" id="bkb-interval" name="interval_seconds"
-                                           min="60" max="86400" value="{{ old('interval_seconds', $intervalSeconds) }}"/>
+                                           min="3600" max="604800" value="{{ old('interval_seconds', $intervalSeconds) }}"/>
                                 </div>
                             </div>
                             <div class="form-check mb-3">

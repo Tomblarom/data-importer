@@ -105,6 +105,10 @@ final class BkbTest extends TestCase
 
     public function testLoginRequiresCsrfToken(): void
     {
+        // Prove the real CSRF middleware: testing environments may bypass
+        // it, so run this single test as a local environment.
+        $this->app['env'] = 'local';
+
         $this->post('/bkb/login', ['password' => $this->adminPassword])->assertStatus(419);
     }
 
@@ -133,8 +137,26 @@ final class BkbTest extends TestCase
 
         $this->get('/bkb')->assertOk()
             ->assertSee('ready', false)
+            ->assertSee('not verified', false)
+            ->assertSee('ping', false)
             ->assertDontSee('test-token')
             ->assertHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    }
+
+    public function testSaveConfigRejectsShortInterval(): void
+    {
+        $this->get('/bkb/login')->assertOk();
+        $this->withSession([BkbAdmin::SESSION_KEY => true])->post(
+            '/bkb/config',
+            [
+                '_token'           => csrf_token(),
+                'account_url'      => 'https://ebanking.bkb.ch/statements',
+                'interval_seconds' => 60,
+                'paused'           => '1',
+            ]
+        )->assertSessionHasErrors('interval_seconds');
+
+        Http::assertNothingSent();
     }
 
     public function testLogoutClearsSession(): void
@@ -164,10 +186,17 @@ final class BkbTest extends TestCase
             ['_token' => csrf_token(), 'type' => 'key', 'key' => 'Escape']
         )->assertStatus(422);
 
-        // a valid click is proxied with the internal Bearer token.
+        // rejected banking text is never flashed into the session.
         $this->withSession($session)->postJson(
             '/bkb/browser/action',
-            ['_token' => csrf_token(), 'type' => 'click', 'x' => 720, 'y' => 500]
+            ['_token' => csrf_token(), 'type' => 'text']
+        )->assertStatus(422);
+        $this->assertFalse(session()->has('_old_input'));
+
+        // a click on the extreme viewport pixel is proxied with the internal Bearer token.
+        $this->withSession($session)->postJson(
+            '/bkb/browser/action',
+            ['_token' => csrf_token(), 'type' => 'click', 'x' => 1439, 'y' => 999]
         )->assertOk()->assertJson(['ok' => true]);
 
         Http::assertSent(
@@ -225,13 +254,20 @@ final class BkbTest extends TestCase
     private function statusPayload(): array
     {
         return [
-            'state'               => 'ready',
-            'authenticated'       => true,
-            'paused'              => true,
-            'last_success'        => null,
-            'next_run'            => '2026-10-16T01:00:00+00:00',
-            'last_error'          => null,
-            'configuration_ready' => true,
+            'state'                      => 'ready',
+            'authenticated'              => true,
+            'paused'                     => true,
+            'last_success'               => null,
+            'next_run'                   => '2026-10-16T01:00:00+00:00',
+            'last_error'                 => null,
+            'configuration_ready'        => true,
+            'keepalive'                  => [
+                'strategy'      => 'ping',
+                'last_verified' => '2026-10-15T12:00:00+00:00',
+                'observations'  => [],
+            ],
+            'pending_import'             => false,
+            'last_export_range_verified' => false,
         ];
     }
 
