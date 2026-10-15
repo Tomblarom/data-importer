@@ -358,7 +358,7 @@ final class BkbController extends Controller
         $importJob = $this->repository->markAs($importJob, 'contains_content');
 
         // The normalized bot CSV uses semicolons and a header row.
-        $configuration = Configuration::fromArray(['delimiter' => ';']);
+        $configuration = Configuration::fromArray(['delimiter' => 'semicolon']);
         $configuration->setHeaders(true);
         if ('' !== $configContent) {
             try {
