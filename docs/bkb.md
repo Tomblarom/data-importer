@@ -35,6 +35,15 @@ php -r "echo password_hash('your-password', PASSWORD_DEFAULT), PHP_EOL;"
    reuse the exact same mapping.
 6. Unpause and either wait for the hourly run or press "Sync now".
 
+## Failed imports
+
+When an import fails terminally, the management page shows a pending import
+and offers "Acknowledge failed import". This archives the bot journal and
+forces automatic imports to stay paused so the column mapping can be
+corrected first. Acknowledgement is only accepted for a verified terminal
+failed receipt; unknown or still-processing imports stay blocked, and
+nothing is ever retried automatically.
+
 Public endpoints (`/api/import-flows`, `/validate/bkb`,
 `/api/import-flows/validate/bkb`) only report whether the service is
 configured and reachable; bank state stays behind the admin login.

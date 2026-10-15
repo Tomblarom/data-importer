@@ -137,6 +137,18 @@ final class BkbClient
     }
 
     /**
+     * Acknowledge a verified terminal failed import. The bot archives its
+     * journal and forces paused=true so the mapping can be corrected.
+     * Unknown or still-processing imports stay blocked (non-OK response).
+     */
+    public function recover(): bool
+    {
+        $response = $this->send('post', '/v1/recover', [], 30);
+
+        return null !== $response && $response->ok();
+    }
+
+    /**
      * Enqueue a background import. Returns the HTTP status code
      * (202 accepted, 409 busy or not ready), or null when unreachable.
      */

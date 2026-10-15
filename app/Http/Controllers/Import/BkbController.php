@@ -410,6 +410,19 @@ final class BkbController extends Controller
     }
 
     /**
+     * POST /bkb/recover — acknowledge a verified terminal failed import.
+     * Archives the bot journal and forces pause; never retries automatically.
+     */
+    public function recover(): RedirectResponse
+    {
+        if (!$this->client->recover()) {
+            return redirect()->route('bkb.index')->withErrors(['recover' => 'Could not acknowledge the failed import. It may still be processing.']);
+        }
+
+        return redirect()->route('bkb.index')->with('status', 'Failed import acknowledged. Automatic imports are paused; correct the mapping, then resume.');
+    }
+
+    /**
      * POST /bkb/pause and POST /bkb/resume
      */
     public function pause(): RedirectResponse

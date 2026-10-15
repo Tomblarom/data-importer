@@ -211,6 +211,18 @@
                             <input type="hidden" name="_token" value="{{ csrf_token() }}"/>
                             <button type="submit" class="btn btn-primary">Sync now</button>
                         </form>
+                        @if($pendingImport)
+                            <form method="post" action="{{ route('bkb.recover') }}" accept-charset="UTF-8"
+                                  class="d-inline ms-2">
+                                <input type="hidden" name="_token" value="{{ csrf_token() }}"/>
+                                <button type="submit" class="btn btn-warning">Acknowledge failed import</button>
+                            </form>
+                            <p class="form-text mt-2 mb-0">
+                                Acknowledges a verified terminal failed import: the journal is archived and
+                                automatic imports stay paused so the mapping can be corrected. Nothing is
+                                retried automatically.
+                            </p>
+                        @endif
                         @if($botPaused)
                             <form method="post" action="{{ route('bkb.resume') }}" accept-charset="UTF-8"
                                   class="d-inline ms-2">
