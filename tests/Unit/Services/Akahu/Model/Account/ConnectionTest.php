@@ -48,7 +48,7 @@ final class ConnectionTest extends TestCase
         $serialized   = json_encode($original->toArray(), JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR);
         $deserialized = Connection::fromArray(json_decode($serialized, true));
 
-        $this->assertSame($original, $deserialized);
+        $this->assertEquals($original, $deserialized);
     }
 
     public function testParseJsonFull(): void
